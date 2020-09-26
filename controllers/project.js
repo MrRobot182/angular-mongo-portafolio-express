@@ -2,6 +2,7 @@
 
 var projectModel = require('../models/project');
 var fs = require('fs');
+var path = require('path');
 
 var controller = {
     home: (req,res)=>{
@@ -87,7 +88,7 @@ var controller = {
     deleteProject: (req,res)=>{
         var projectId = req.params.id;
         projectModel.findByIdAndDelete(projectId, (err, projectDeleted)=>{
-            if(err) res.status(500).send({message: "Error al borrar"});
+            if(err) return res.status(500).send({message: "Error al borrar"});
             if(!projectDeleted) return res.status(404).send({message: "No existe el proyecto"});
             return res.status(200).send({
                 project: projectDeleted
@@ -99,6 +100,7 @@ var controller = {
         var projectId = req.params.id;
         
         if(req.files){
+            res.status(200).send({file: req.files})            
             var filePath = req.files.image.path;
             var fileSplit = filePath.split('/');
             var fileName = fileSplit[1]; 
@@ -131,6 +133,18 @@ var controller = {
                 message: 'Imagen no subida'
             })
         }
+    },
+
+    getImage: (req,res) => {
+        var file = req.params.file;
+        var pathFile = "./uploads/"+file;
+
+        fs.exists(pathFile, (exists) => {
+            if(exists)
+                return res.sendFile(path.resolve(pathFile));
+            else
+                return res.status(404);
+        });
     }
 };
 
