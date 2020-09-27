@@ -87,12 +87,29 @@ var controller = {
     },
     deleteProject: (req,res)=>{
         var projectId = req.params.id;
+        
         projectModel.findByIdAndDelete(projectId, (err, projectDeleted)=>{
+            
             if(err) return res.status(500).send({message: "Error al borrar"});
+            
             if(!projectDeleted) return res.status(404).send({message: "No existe el proyecto"});
-            return res.status(200).send({
-                project: projectDeleted
-            });
+            
+            if(projectDeleted){
+                
+                let imagePath = './uploads/'+projectDeleted.image; 
+                
+                fs.unlink(imagePath, (err)=>{
+                    if(err)
+                        return res.status(500).send({
+                            message: "Error al eliminar imagen",
+                            project: projectDeleted
+                        });
+                    else
+                        return res.status(200).send({
+                            project: projectDeleted
+                        });
+                })                
+            }
         })
     },
     //connect-multiparty
