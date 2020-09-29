@@ -30,12 +30,9 @@ var controller = {
             if(err)
                 return res.status(500).send({
                     message: "Error al guardar"
-                });
-            if(!stored)
-                return res.status(404).send({
-                    message: "No se ha podido guardar el proyecto"
-                });
-            return res.status(201).send({project: stored});
+            });
+            else
+                return res.status(201).send({project: stored});
         });
     },
     getProject: (req,res)=>{
@@ -113,43 +110,61 @@ var controller = {
         })
     },
     //connect-multiparty
-    uploadImage: (req,res)=>{
+    uploadImage: (req,res)=>{        
+
         var projectId = req.params.id;
+        var uploadsDir = "./uploads/";
         
-        if(req.files){
-            res.status(200).send({file: req.files})            
-            var filePath = req.files.image.path;
-            var fileSplit = filePath.split('/');
-            var fileName = fileSplit[1]; 
-            var extSplit = fileName.split('.');
+        projectModel.findById(projectId,(err, project)=>{
+            if(err)
+                return res.status(404);
+            return project;            
+        })
+        .then(
+            project => {
+                                
+                console.log(uploadsDir+project.image); 
+                let checkFile = uploadsDir+project.image; 
 
-            if(extSplit[1]=="png"||extSplit[1]=="jpg"||extSplit[1]=="jpeg"||extSplit[1]=="gif")
-            {
-                projectModel.findByIdAndUpdate(projectId, {image: fileName}, {new: true},(err, projectUpdated)=>{
-                    if(!projectUpdated) return res.status(404).send({message: "No existe el proyecto"});
-                    if(err) return res.status(500).send({message: "Imagen no asignada"});
-                    return res.status(200).send({project: projectUpdated});
-                })
-            }
-            else{
-                fs.unlink(filePath, (err)=>{
+                if(req.files){
+
+                    fs.exists(checkFile, (exists) => {
+                        if(exists)
+                            fs.unlink(checkFile, (err)=>console.log(err));                
+                    });
+
+                    //res.status(200).send({file: req.files})            
+                    var filePath = req.files.image.path;
+                    var fileSplit = filePath.split('/');
+                    var fileName = fileSplit[1]; 
+                    var extSplit = fileName.split('.');
+
+                    if(extSplit[1]=="png"||extSplit[1]=="jpg"||extSplit[1]=="jpeg"||extSplit[1]=="gif")
+                    {
+                        projectModel.findByIdAndUpdate(projectId, {image: fileName}, {new: true},(err, projectUpdated)=>{
+                            if(!projectUpdated) return res.status(404).send({message: "No existe el proyecto"});
+                            if(err) return res.status(500).send({message: "Imagen no asignada"});
+                            return res.status(200).send({project: projectUpdated});
+                        })
+                    }
+                    else{
+                        fs.unlink(filePath, (err)=>{
+                            return res.status(200).send({
+                                message: "Extension invalida"
+                            })
+                        })
+                    }
+                }
+                else{
                     return res.status(200).send({
-                        message: "Extension invalida"
+                        message: 'Imagen no subida'
                     })
-                })
-            }
-
-            
-
-            /*return res.status(200).send({
-                fileName: fileName//fileName
-            })*/
-        }
-        else{
-            return res.status(200).send({
-                message: 'Imagen no subida'
-            })
-        }
+                }
+                
+            }            
+        )
+        
+        
     },
 
     getImage: (req,res) => {
